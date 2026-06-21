@@ -10,13 +10,31 @@
   :root { --fintler: #1B38DB; }
   .topnav { border-bottom: 3px solid var(--fintler); }
   .btn-primary { background: var(--fintler); }
-  .progress-fill { background: var(--fintler); }
   .client-hero { background: var(--fintler); }
-  .upload-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border:1.5px dashed #C5CCEF;border-radius:8px;background:var(--fintler-light,#E8ECFD);color:var(--fintler);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:var(--font);margin-top:10px; }
+  .client-wrap { display:grid; grid-template-columns:1fr 260px; min-height:calc(100vh - 61px); gap:0; }
+  .client-main { padding:24px; overflow-y:auto; max-width:720px; }
+  .feed-panel { background:#F7F8FF; border-left:1px solid #E0E4F8; display:flex; flex-direction:column; position:sticky; top:61px; height:calc(100vh - 61px); overflow:hidden; }
+  .feed-header { padding:14px 16px; border-bottom:1px solid #E0E4F8; background:white; }
+  .feed-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--fintler); }
+  .feed-scroll { flex:1; overflow-y:auto; padding:12px; }
+  .feed-entry { background:white;border:1px solid #E0E4F8;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #E0E4F8; }
+  .feed-entry.by-Admin { border-left-color:var(--fintler); }
+  .feed-entry.by-Team { border-left-color:#0F7A5A; }
+  .feed-entry.by-Client { border-left-color:#B5680A; }
+  .feed-who { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px; }
+  .by-Admin .feed-who { color:var(--fintler); }
+  .by-Team .feed-who { color:#0F7A5A; }
+  .by-Client .feed-who { color:#B5680A; }
+  .feed-action { font-size:12px;color:#2E2D2A;line-height:1.5; }
+  .feed-detail { font-size:11px;color:#9E9C98;margin-top:2px; }
+  .feed-time { font-size:10px;color:#C0BEB9;font-family:var(--mono);margin-top:4px;display:flex;align-items:center;gap:4px; }
+  .feed-empty { text-align:center;padding:30px 16px;color:#C0BEB9;font-size:12px; }
+  .upload-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border:1.5px dashed #C5CCEF;border-radius:8px;background:#E8ECFD;color:var(--fintler);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:var(--font);margin-top:10px; }
   .upload-btn:hover { border-color:var(--fintler);background:#d0d9f8; }
   .file-attached { display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#EAF5EA;border:1px solid #B8E0B8;border-radius:6px;font-size:12px;color:#237A23;text-decoration:none;margin-top:8px; }
   .upload-progress { height:4px;background:#E8ECFD;border-radius:2px;margin-top:8px;overflow:hidden; }
   .upload-progress-fill { height:100%;background:var(--fintler);border-radius:2px;transition:width .3s; }
+  @media(max-width:900px) { .client-wrap{grid-template-columns:1fr} .feed-panel{display:none} }
 </style>
 </head>
 <body class="client-body">
@@ -63,23 +81,36 @@
   </div>
 </div>
 
-<div id="client-portal" class="hidden wrap" style="max-width:720px">
-  <div class="client-hero" id="client-hero"></div>
-  <div class="progress-stats" id="progress-stats"></div>
-  <div class="card" id="checklist-card">
-    <div class="card-title">Your document checklist</div>
-    <div id="checklist-items"></div>
-  </div>
-  <div class="card" style="margin-top:14px">
-    <div class="card-title">Have an additional document?</div>
-    <p style="font-size:13px;color:var(--gray-400);margin-bottom:12px">If Fintler has not listed a document you need to submit, add it here.</p>
-    <div style="display:flex;gap:8px">
-      <input type="text" id="client-add-inp" placeholder="e.g. Bank confirmation letter..." style="flex:1"/>
-      <button class="btn btn-primary" style="background:#1B38DB" onclick="clientAddItem()">Add</button>
+<div id="client-portal" class="hidden">
+  <div class="client-wrap">
+    <div class="client-main">
+      <div class="client-hero" id="client-hero"></div>
+      <div class="progress-stats" id="progress-stats"></div>
+      <div class="card" id="checklist-card">
+        <div class="card-title">Your document checklist</div>
+        <div id="checklist-items"></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-title">Have an additional document?</div>
+        <p style="font-size:13px;color:var(--gray-400);margin-bottom:12px">If Fintler has not listed a document you need to submit, add it here.</p>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="client-add-inp" placeholder="e.g. Bank confirmation letter..." style="flex:1"/>
+          <button class="btn btn-primary" style="background:#1B38DB" onclick="clientAddItem()">Add</button>
+        </div>
+      </div>
+      <div style="text-align:center;padding:24px 0 8px;font-size:12px;color:var(--gray-400)">
+        Questions? Contact us at <a href="mailto:ansam@fintler.com" style="color:#1B38DB">ansam@fintler.com</a> or <a href="mailto:info@fintler.com" style="color:#1B38DB">info@fintler.com</a>
+      </div>
     </div>
-  </div>
-  <div style="text-align:center;padding:24px 0 8px;font-size:12px;color:var(--gray-400)">
-    Questions? Contact us at <a href="mailto:ansam@fintler.com" style="color:#1B38DB">ansam@fintler.com</a> or <a href="mailto:info@fintler.com" style="color:#1B38DB">info@fintler.com</a>
+
+    <div class="feed-panel">
+      <div class="feed-header">
+        <div class="feed-title">Submission history</div>
+      </div>
+      <div class="feed-scroll" id="feed-scroll">
+        <div class="feed-empty">Your activity will appear here.</div>
+      </div>
+    </div>
   </div>
 </div>
 
