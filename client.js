@@ -142,7 +142,7 @@ function clientDocHTML(item) {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Mark as submitted / confirm you've sent this
       </button>` : ''}
-    ${item.status === 'received' ? '<div style="font-size:12px;color:var(--green-600);margin-top:10px;font-weight:500;display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Received — Fintler is reviewing</div>' : ''}
+    ${item.status === 'received' ? '<div style="font-size:12px;color:var(--green-600);margin-top:10px;font-weight:500;display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ✓ Received — Fintler is reviewing</div><button onclick="clientUnsubmit(${item.id})" style="margin-top:8px;font-size:11px;color:var(--gray-400);background:none;border:none;cursor:pointer;text-decoration:underline">Undo submission</button></div>' : ''}
   </div>`;
 }
 
@@ -188,3 +188,16 @@ document.addEventListener('keydown', function(e) {
     tryLogin();
   }
 });
+function clientUnsubmit(iid) {
+  const c = activeClient;
+  if (!c) return;
+  const item = c.items.find(i => i.id === iid);
+  if (!item) return;
+  item.status = 'pending';
+  item.notes.push({ author: 'Client', text: 'Unmarked as submitted by client', time: nowStr() });
+  const clients = loadClients();
+  const idx = clients.findIndex(x => x.id === c.id);
+  if (idx !== -1) { clients[idx] = c; saveClients(clients); }
+  renderClientPortal();
+  toast('Submission undone');
+}
