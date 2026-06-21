@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Fintler — Document Submission</title>
+<link rel="stylesheet" href="../assets/style.css"/>
+</head>
+<body class="client-body">
+
+<nav class="topnav client-nav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1A5EA8"/><path d="M8 10h10M8 16h7M8 22h9" stroke="white" stroke-width="2.2" stroke-linecap="round"/><circle cx="23" cy="20" r="5" fill="#5DCAA5"/><path d="M21 20l1.5 1.5L25 18.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="logo-text">Fintler <span class="logo-sub">/ Document Submission</span></span>
+  </div>
+  <div id="client-nav-info" class="nav-right hidden">
+    <span class="nav-badge green" id="client-name-badge"></span>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="40" height="40" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1A5EA8"/><path d="M8 10h10M8 16h7M8 22h9" stroke="white" stroke-width="2.2" stroke-linecap="round"/><circle cx="23" cy="20" r="5" fill="#5DCAA5"/><path d="M21 20l1.5 1.5L25 18.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="login-title">Document submission portal</div>
+    <div class="login-sub">Enter the access password provided by Fintler to view your document checklist.</div>
+    <div class="field" style="margin-bottom:8px">
+      <input type="password" id="pw-input" placeholder="Enter your password" style="text-align:center;font-size:15px;padding:12px"
+        onkeydown="if(event.key==='Enter')tryLogin()"/>
+    </div>
+    <div id="login-error" class="login-error hidden">Incorrect password. Please check with Fintler.</div>
+    <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;margin-top:4px" onclick="tryLogin()">Access my checklist</button>
+    <div class="login-footer">
+      Having trouble? Contact <a href="mailto:info@fintler.om">info@fintler.om</a>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT PORTAL (shown after login) -->
+<div id="client-portal" class="hidden wrap" style="max-width:720px">
+
+  <!-- HERO -->
+  <div class="client-hero" id="client-hero"></div>
+
+  <!-- PROGRESS STATS -->
+  <div class="progress-stats" id="progress-stats"></div>
+
+  <!-- CHECKLIST -->
+  <div class="card" id="checklist-card">
+    <div class="card-title">Your document checklist</div>
+    <div id="checklist-items"></div>
+  </div>
+
+  <!-- ADD EXTRA DOCUMENT -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">Have an additional document?</div>
+    <p style="font-size:13px;color:var(--gray-400);margin-bottom:12px">If Fintler has not listed a document you need to submit, add it here. They will be notified.</p>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="client-add-inp" placeholder="e.g. Bank confirmation letter..." style="flex:1"/>
+      <button class="btn btn-primary" onclick="clientAddItem()">Add</button>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div style="text-align:center;padding:24px 0 8px;font-size:12px;color:var(--gray-400)">
+    Questions? Reach us at <a href="mailto:info@fintler.om" style="color:var(--blue-600)">info@fintler.om</a>
+  </div>
+</div>
+
+<script src="../assets/shared.js"></script>
+<script src="../assets/client.js"></script>
+</body>
+</html>
