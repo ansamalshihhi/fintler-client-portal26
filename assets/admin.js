@@ -89,9 +89,18 @@ function renderStatusChips() {
   const inprog = clients.filter(c => !overdue.includes(c) && c.items.some(i=>i.status==='pending'));
   const complete = clients.filter(c => c.items.length && c.items.every(i=>i.status==='received'));
   let html = '';
-  if (overdue.length) html += `<span class="status-chip chip-overdue">⚠ ${overdue.length} overdue</span>`;
-  if (inprog.length) html += `<span class="status-chip chip-inprog">📋 ${inprog.length} in progress</span>`;
-  if (complete.length) html += `<span class="status-chip chip-complete">✅ ${complete.length} complete</span>`;
+  overdue.forEach(c => {
+    const pending = c.items.filter(i=>i.status==='pending').length;
+    html += `<div class="status-chip chip-overdue" onclick="selectClient(${c.id})" style="display:flex;width:100%;margin-bottom:4px">⚠ ${c.name} — ${pending} pending · overdue</div>`;
+  });
+  inprog.forEach(c => {
+    const done=c.items.filter(i=>i.status==='received').length, total=c.items.length;
+    const pct=total?Math.round(done/total*100):0;
+    html += `<div class="status-chip chip-inprog" onclick="selectClient(${c.id})" style="display:flex;width:100%;margin-bottom:4px">📋 ${c.name} — ${pct}% · ${done}/${total}</div>`;
+  });
+  complete.forEach(c => {
+    html += `<div class="status-chip chip-complete" style="display:flex;width:100%;margin-bottom:4px">✅ ${c.name} — complete</div>`;
+  });
   el.innerHTML = html || '<span style="font-size:11px;color:#C0BEB9">All clear</span>';
 }
 
