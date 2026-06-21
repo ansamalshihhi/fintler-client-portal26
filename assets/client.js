@@ -198,4 +198,20 @@ async function clientAddItem() {
   activeDocs = await dbGetDocuments(activeClient.id);
   renderClientPortal();
   toast('Document added');
+  renderClientFeed();
+}
+async function renderClientFeed() {
+  const el = document.getElementById('feed-scroll'); if (!el || !activeClient) return;
+  const entries = await dbGetActivityLog(activeClient.id);
+  if (!entries.length) { el.innerHTML = '<div class="feed-empty">No activity yet.</div>'; return; }
+  el.innerHTML = entries.map(e => `
+    <div class="feed-entry by-${e.by}">
+      <div class="feed-who">${e.by}</div>
+      <div class="feed-action">${e.action}</div>
+      ${e.detail?`<div class="feed-detail">${e.detail}</div>`:''}
+      <div class="feed-time">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        ${e.timestamp}
+      </div>
+    </div>`).join('');
 }
