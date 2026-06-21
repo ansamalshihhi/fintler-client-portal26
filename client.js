@@ -9,13 +9,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const ref = params.get('ref');
   if (ref) {
-    // Pre-fill slug hint; user still needs the password
     const inp = document.getElementById('pw-input');
     if (inp) inp.placeholder = 'Enter your Fintler password';
-    // Store ref for use after login
     window._clientRef = ref;
   }
-  // Auto-focus password input
   const pw = document.getElementById('pw-input');
   if (pw) pw.focus();
 });
@@ -23,7 +20,6 @@ window.addEventListener('DOMContentLoaded', () => {
 // ── Login ──────────────────────────────────────────────
 async function tryLogin() {
   const pw = document.getElementById('pw-input').value.trim();
-  const errorEl = document.getElementById('login-error');
   const btn = document.querySelector('.login-card .btn-primary');
   if (!pw) { showError('Please enter your password.'); return; }
 
@@ -33,13 +29,12 @@ async function tryLogin() {
   const clients = loadClients();
   const ref = window._clientRef || null;
 
-  // Try to match by slug (from URL) + password, or just password alone
   let matched = null;
   for (const c of clients) {
     const ok = await verifyPassword(pw, c.passwordHash);
     if (ok) {
       if (!ref || c.slug === ref) { matched = c; break; }
-      if (!matched) matched = c; // fallback: password match without ref
+      if (!matched) matched = c;
     }
   }
 
@@ -78,7 +73,6 @@ function renderClientPortal() {
     : 'To be confirmed';
   const isOverdue = c.deadline && new Date(c.deadline) < new Date() && done < total;
 
-  // Hero
   document.getElementById('client-hero').innerHTML = `
     <h2>${c.name}</h2>
     <p>${c.docType} submission${c.period ? ' — ' + c.period : ''}</p>
@@ -91,7 +85,6 @@ function renderClientPortal() {
     </div>
   `;
 
-  // Progress stats
   document.getElementById('progress-stats').innerHTML = `
     <div class="ps-card">
       <div class="ps-num" style="${pct === 100 ? 'color:var(--green-600)' : ''}">${pct}%</div>
@@ -110,7 +103,6 @@ function renderClientPortal() {
     </div>
   `;
 
-  // Checklist
   const pending = c.items.filter(i => i.status !== 'received');
   const received = c.items.filter(i => i.status === 'received');
   document.getElementById('checklist-items').innerHTML = `
@@ -120,6 +112,11 @@ function renderClientPortal() {
     ${received.length ? `<div style="font-size:11px;font-weight:600;color:var(--green-600);margin:16px 0 10px;text-transform:uppercase;letter-spacing:.07em">Submitted (${received.length})</div>` : ''}
     ${received.map(item => clientDocHTML(item)).join('')}
   `;
+
+  const footer = document.querySelector('#client-portal .wrap > div:last-child');
+  if (footer) {
+    footer.innerHTML = `Questions? Contact us at <a href="mailto:ansam@fintler.com" style="color:var(--blue-600)">ansam@fintler.com</a> or <a href="mailto:info@fintler.com" style="color:var(--blue-600)">info@fintler.com</a>`;
+  }
 }
 
 function clientDocHTML(item) {
@@ -142,7 +139,14 @@ function clientDocHTML(item) {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Mark as submitted / confirm you've sent this
       </button>` : ''}
-    ${item.status === 'received' ? '<div style="font-size:12px;color:var(--green-600);margin-top:10px;font-weight:500;display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ✓ Received — Fintler is reviewing</div><button onclick="clientUnsubmit(${item.id})" style="margin-top:8px;font-size:11px;color:var(--gray-400);background:none;border:none;cursor:pointer;text-decoration:underline">Undo submission</button></div>' : ''}
+    ${item.status === 'received' ? `
+      <div style="font-size:12px;color:var(--green-600);margin-top:10px;font-weight:500;display:flex;align-items:center;gap:5px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Received — Fintler is reviewing
+      </div>
+      <button onclick="clientUnsubmit(${item.id})" style="margin-top:6px;font-size:11px;color:var(--gray-400);background:none;border:1px solid var(--gray-200);border-radius:4px;padding:3px 10px;cursor:pointer;">
+        ↩ Undo submission
+      </button>` : ''}
   </div>`;
 }
 
@@ -153,14 +157,25 @@ function markSubmitted(iid) {
   if (!item) return;
   item.status = 'received';
   item.notes.push({ author: 'Client', text: 'Marked as submitted by client via portal', time: nowStr() });
-
-  // Sync back to shared storage so Fintler sees it
   const clients = loadClients();
   const idx = clients.findIndex(x => x.id === c.id);
   if (idx !== -1) { clients[idx] = c; saveClients(clients); }
-
   renderClientPortal();
   toast('Marked as submitted — Fintler will be notified');
+}
+
+function clientUnsubmit(iid) {
+  const c = activeClient;
+  if (!c) return;
+  const item = c.items.find(i => i.id === iid);
+  if (!item) return;
+  item.status = 'pending';
+  item.notes.push({ author: 'Client', text: 'Submission undone by client', time: nowStr() });
+  const clients = loadClients();
+  const idx = clients.findIndex(x => x.id === c.id);
+  if (idx !== -1) { clients[idx] = c; saveClients(clients); }
+  renderClientPortal();
+  toast('Submission undone successfully');
 }
 
 function clientAddItem() {
@@ -171,33 +186,16 @@ function clientAddItem() {
   const item = mkItem(genId(), inp.value.trim(), '', 'client');
   item.notes.push({ author: 'Client', text: 'Added by client via portal', time: nowStr() });
   c.items.push(item);
-
-  // Sync to storage
   const clients = loadClients();
   const idx = clients.findIndex(x => x.id === c.id);
   if (idx !== -1) { clients[idx] = c; saveClients(clients); }
-
   inp.value = '';
   renderClientPortal();
   toast('Document added — Fintler has been notified');
 }
 
-// Allow Enter key on password field
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && document.getElementById('login-screen') && !document.getElementById('login-screen').classList.contains('hidden')) {
     tryLogin();
   }
 });
-function clientUnsubmit(iid) {
-  const c = activeClient;
-  if (!c) return;
-  const item = c.items.find(i => i.id === iid);
-  if (!item) return;
-  item.status = 'pending';
-  item.notes.push({ author: 'Client', text: 'Unmarked as submitted by client', time: nowStr() });
-  const clients = loadClients();
-  const idx = clients.findIndex(x => x.id === c.id);
-  if (idx !== -1) { clients[idx] = c; saveClients(clients); }
-  renderClientPortal();
-  toast('Submission undone');
-}
