@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Fintler — Document Submission</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="../assets/style.css"/>
 <style>
   :root { --fintler: #1B38DB; }
@@ -11,7 +12,11 @@
   .btn-primary { background: var(--fintler); }
   .progress-fill { background: var(--fintler); }
   .client-hero { background: var(--fintler); }
-  .login-footer a { color: var(--fintler); }
+  .upload-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border:1.5px dashed #C5CCEF;border-radius:8px;background:var(--fintler-light,#E8ECFD);color:var(--fintler);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:var(--font);margin-top:10px; }
+  .upload-btn:hover { border-color:var(--fintler);background:#d0d9f8; }
+  .file-attached { display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#EAF5EA;border:1px solid #B8E0B8;border-radius:6px;font-size:12px;color:#237A23;text-decoration:none;margin-top:8px; }
+  .upload-progress { height:4px;background:#E8ECFD;border-radius:2px;margin-top:8px;overflow:hidden; }
+  .upload-progress-fill { height:100%;background:var(--fintler);border-radius:2px;transition:width .3s; }
 </style>
 </head>
 <body class="client-body">
@@ -53,7 +58,7 @@
     <div id="login-error" class="login-error hidden">Incorrect password. Please check with Fintler.</div>
     <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;margin-top:4px;background:#1B38DB" onclick="tryLogin()">Access my checklist</button>
     <div class="login-footer">
-      Having trouble? Contact <a href="mailto:ansam@fintler.com">ansam@fintler.com</a> or <a href="mailto:info@fintler.com">info@fintler.com</a>
+      Having trouble? Contact <a href="mailto:ansam@fintler.com" style="color:#1B38DB">ansam@fintler.com</a> or <a href="mailto:info@fintler.com" style="color:#1B38DB">info@fintler.com</a>
     </div>
   </div>
 </div>
@@ -78,6 +83,7 @@
   </div>
 </div>
 
+<script src="../assets/db.js"></script>
 <script src="../assets/shared.js"></script>
 <script src="../assets/client.js"></script>
 </body>
