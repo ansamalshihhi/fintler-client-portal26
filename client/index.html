@@ -5,31 +5,53 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Fintler — Document Submission</title>
 <link rel="stylesheet" href="../assets/style.css"/>
+<style>
+  :root { --fintler: #1B38DB; }
+  .topnav { border-bottom: 3px solid var(--fintler); }
+  .btn-primary { background: var(--fintler); }
+  .progress-fill { background: var(--fintler); }
+  .client-hero { background: var(--fintler); }
+  .login-footer a { color: var(--fintler); }
+</style>
 </head>
 <body class="client-body">
+
 <nav class="topnav client-nav">
   <div class="logo">
-    <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1A5EA8"/><path d="M8 10h10M8 16h7M8 22h9" stroke="white" stroke-width="2.2" stroke-linecap="round"/><circle cx="23" cy="20" r="5" fill="#5DCAA5"/><path d="M21 20l1.5 1.5L25 18.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="logo-text">Fintler <span class="logo-sub">/ Document Submission</span></span>
+    <svg viewBox="0 0 32 32" fill="none" style="width:22px;height:22px;border-radius:4px;flex-shrink:0">
+      <rect width="32" height="32" rx="6" fill="#1B38DB"/>
+      <rect x="9" y="8" width="14" height="3.5" rx="1" fill="white"/>
+      <rect x="9" y="14" width="7" height="3.5" rx="1" fill="white"/>
+      <circle cx="20" cy="15.75" r="3" fill="white"/>
+      <circle cx="12" cy="22" r="3" fill="white"/>
+    </svg>
+    <span class="logo-text" style="color:#1B38DB;font-weight:700">Fintler <span style="color:#9E9C98;font-weight:400">/ Document Submission</span></span>
   </div>
   <div id="client-nav-info" class="nav-right hidden">
     <span class="nav-badge green" id="client-name-badge"></span>
   </div>
 </nav>
+
 <div class="toast" id="toast"></div>
 
 <div id="login-screen" class="login-wrap">
   <div class="login-card">
-    <div class="login-logo">
-      <svg width="40" height="40" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1A5EA8"/><path d="M8 10h10M8 16h7M8 22h9" stroke="white" stroke-width="2.2" stroke-linecap="round"/><circle cx="23" cy="20" r="5" fill="#5DCAA5"/><path d="M21 20l1.5 1.5L25 18.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div style="margin-bottom:20px;text-align:center">
+      <svg viewBox="0 0 32 32" fill="none" style="width:56px;height:56px;margin:0 auto">
+        <rect width="32" height="32" rx="8" fill="#1B38DB"/>
+        <rect x="9" y="8" width="14" height="3.5" rx="1" fill="white"/>
+        <rect x="9" y="14" width="7" height="3.5" rx="1" fill="white"/>
+        <circle cx="20" cy="15.75" r="3" fill="white"/>
+        <circle cx="12" cy="22" r="3" fill="white"/>
+      </svg>
     </div>
-    <div class="login-title">Document submission portal</div>
+    <div class="login-title" style="color:#1B38DB">Document submission portal</div>
     <div class="login-sub">Enter the access password provided by Fintler to view your document checklist.</div>
     <div class="field" style="margin-bottom:8px">
       <input type="password" id="pw-input" placeholder="Enter your password" style="text-align:center;font-size:15px;padding:12px" onkeydown="if(event.key==='Enter')tryLogin()"/>
     </div>
     <div id="login-error" class="login-error hidden">Incorrect password. Please check with Fintler.</div>
-    <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;margin-top:4px" onclick="tryLogin()">Access my checklist</button>
+    <button class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;margin-top:4px;background:#1B38DB" onclick="tryLogin()">Access my checklist</button>
     <div class="login-footer">
       Having trouble? Contact <a href="mailto:ansam@fintler.com">ansam@fintler.com</a> or <a href="mailto:info@fintler.com">info@fintler.com</a>
     </div>
@@ -48,11 +70,11 @@
     <p style="font-size:13px;color:var(--gray-400);margin-bottom:12px">If Fintler has not listed a document you need to submit, add it here.</p>
     <div style="display:flex;gap:8px">
       <input type="text" id="client-add-inp" placeholder="e.g. Bank confirmation letter..." style="flex:1"/>
-      <button class="btn btn-primary" onclick="clientAddItem()">Add</button>
+      <button class="btn btn-primary" style="background:#1B38DB" onclick="clientAddItem()">Add</button>
     </div>
   </div>
   <div style="text-align:center;padding:24px 0 8px;font-size:12px;color:var(--gray-400)">
-    Questions? Contact us at <a href="mailto:ansam@fintler.com" style="color:var(--blue-600)">ansam@fintler.com</a> or <a href="mailto:info@fintler.com" style="color:var(--blue-600)">info@fintler.com</a>
+    Questions? Contact us at <a href="mailto:ansam@fintler.com" style="color:#1B38DB">ansam@fintler.com</a> or <a href="mailto:info@fintler.com" style="color:#1B38DB">info@fintler.com</a>
   </div>
 </div>
 
