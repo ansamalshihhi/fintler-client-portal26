@@ -1,109 +1,210 @@
 // ═══════════════════════════════════════════════════════
-// FINTLER PORTAL — SHARED DATA LAYER v3
+// FINTLER PORTAL — SHARED DATA LAYER v4 (Supabase)
 // ═══════════════════════════════════════════════════════
 
-const DB_KEY = 'fintler_clients_v1';
-
-function saveClients(clients) {
-  try { localStorage.setItem(DB_KEY, JSON.stringify(clients)); } catch(e) {}
-}
-function loadClients() {
-  try { const raw = localStorage.getItem(DB_KEY); if (raw) return JSON.parse(raw); } catch(e) {}
-  return [];
+function fullTimestamp() {
+  const now = new Date();
+  const date = now.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  const time = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  return `${date} · ${time}`;
 }
 
-function nowStr() {
-  return new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-}
+function nowStr() { return fullTimestamp(); }
 function fmtAmt(n) {
   if (typeof n !== 'number') return '—';
-  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
 }
 function genId() { return Date.now() + Math.floor(Math.random() * 9999); }
 
 function toast(msg) {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('show');
+  const el = document.getElementById('toast'); if (!el) return;
+  el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2800);
 }
 
 async function hashPassword(pw) {
   const enc = new TextEncoder().encode(pw + '_fintler_salt_2025');
   const buf = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
-async function verifyPassword(pw, hash) {
-  return await hashPassword(pw) === hash;
-}
-
-function slugify(name) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
+async function verifyPassword(pw, hash) { return await hashPassword(pw) === hash; }
+function slugify(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
 
 const DOC_SUGG = {
   'Bank statement': [
-    { name: 'Bank statement – Month 1', format: 'Scanned PDF' },
-    { name: 'Bank statement – Month 2', format: 'Scanned PDF' },
-    { name: 'Bank statement – Month 3', format: 'Scanned PDF' },
+    {name:'Bank statement – Month 1',format:'Scanned PDF'},
+    {name:'Bank statement – Month 2',format:'Scanned PDF'},
+    {name:'Bank statement – Month 3',format:'Scanned PDF'},
   ],
   'VAT return': [
-    { name: 'Sales invoices (full period)', format: 'Excel / CSV' },
-    { name: 'Purchase invoices (full period)', format: 'Excel / CSV' },
-    { name: 'Previous VAT return copy', format: 'Scanned PDF' },
-    { name: 'VAT registration certificate', format: 'Scanned PDF' },
+    {name:'Sales invoices (full period)',format:'Excel / CSV'},
+    {name:'Purchase invoices (full period)',format:'Excel / CSV'},
+    {name:'Previous VAT return copy',format:'Scanned PDF'},
+    {name:'VAT registration certificate',format:'Scanned PDF'},
   ],
   'Payroll record': [
-    { name: 'Payroll summary sheet', format: 'Excel / CSV' },
-    { name: 'Employee list with salaries', format: 'Excel / CSV' },
-    { name: 'PASI / social insurance confirmation', format: 'Scanned PDF' },
+    {name:'Payroll summary sheet',format:'Excel / CSV'},
+    {name:'Employee list with salaries',format:'Excel / CSV'},
+    {name:'PASI / social insurance confirmation',format:'Scanned PDF'},
   ],
   'Sales invoices': [
-    { name: 'Sales invoice register', format: 'Excel / CSV' },
-    { name: 'Customer statements', format: 'Scanned PDF' },
-    { name: 'Credit notes (if any)', format: 'Scanned PDF' },
+    {name:'Sales invoice register',format:'Excel / CSV'},
+    {name:'Customer statements',format:'Scanned PDF'},
+    {name:'Credit notes (if any)',format:'Scanned PDF'},
   ],
   'Purchase invoices': [
-    { name: 'Supplier invoices', format: 'Scanned PDF' },
-    { name: 'Payment receipts', format: 'Scanned PDF' },
-    { name: 'Petty cash vouchers', format: 'Scanned PDF' },
+    {name:'Supplier invoices',format:'Scanned PDF'},
+    {name:'Payment receipts',format:'Scanned PDF'},
+    {name:'Petty cash vouchers',format:'Scanned PDF'},
   ],
   'Trial balance': [
-    { name: 'Opening trial balance', format: 'Excel / CSV' },
-    { name: 'Closing trial balance', format: 'Excel / CSV' },
-    { name: 'Supporting schedules', format: 'Excel / CSV' },
+    {name:'Opening trial balance',format:'Excel / CSV'},
+    {name:'Closing trial balance',format:'Excel / CSV'},
+    {name:'Supporting schedules',format:'Excel / CSV'},
   ],
   'Financial statements': [
-    { name: 'Signed financial statements', format: 'Scanned PDF' },
-    { name: 'Board approval letter', format: 'Scanned PDF' },
-    { name: 'Prior year comparatives', format: 'Excel / CSV' },
+    {name:'Signed financial statements',format:'Scanned PDF'},
+    {name:'Board approval letter',format:'Scanned PDF'},
+    {name:'Prior year comparatives',format:'Excel / CSV'},
   ],
 };
 
-function mkItem(id, name, format, addedBy) {
-  return { id, name, format, status: 'pending', notes: [], fintlerRemark: '', addedBy, edited: false };
+// ── Supabase DB helpers ────────────────────────────────
+
+async function dbGetClients() {
+  const { data, error } = await db.from('clients').select('*').order('created_at', { ascending:false });
+  if (error) { console.error('getClients:', error); return []; }
+  return data || [];
 }
 
-// ── Seed demo data (runs once if no clients exist) ─────
+async function dbSaveClient(c, isNew) {
+  const payload = {
+    name: c.name, email: c.email||'', period: c.period||'',
+    doc_type: c.docType||c.doc_type||'', deadline: c.deadline||null,
+    slug: c.slug, password_hash: c.passwordHash||c.password_hash,
+    password_plain: c.passwordPlain||c.password_plain,
+    analysis: c.analysis||null,
+  };
+  if (isNew) {
+    const { data, error } = await db.from('clients').insert(payload).select().single();
+    if (error) { console.error('insert client:', error); return null; }
+    return data;
+  } else {
+    const { data, error } = await db.from('clients').update(payload).eq('id', c.id).select().single();
+    if (error) { console.error('update client:', error); return null; }
+    return data;
+  }
+}
+
+async function dbDeleteClient(id) {
+  const { error } = await db.from('clients').delete().eq('id', id);
+  return !error;
+}
+
+async function dbGetDocuments(clientId) {
+  const { data, error } = await db.from('documents').select('*, notes(*)').eq('client_id', clientId).order('created_at');
+  if (error) { console.error('getDocs:', error); return []; }
+  return (data||[]).map(d => ({
+    id: d.id, name: d.name, format: d.format||'', status: d.status||'pending',
+    addedBy: d.added_by||'fintler', edited: d.edited||false,
+    fileUrl: d.file_url||null, fileName: d.file_name||null,
+    notes: (d.notes||[]).map(n => ({
+      id:n.id, author:n.author, text:n.text,
+      time: new Date(n.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    }))
+  }));
+}
+
+async function dbSaveDocument(clientId, doc, isNew) {
+  const payload = {
+    client_id: clientId, name: doc.name, format: doc.format||'',
+    status: doc.status||'pending', added_by: doc.addedBy||'fintler',
+    edited: doc.edited||false, file_url: doc.fileUrl||null, file_name: doc.fileName||null,
+  };
+  if (isNew) {
+    const { data, error } = await db.from('documents').insert(payload).select().single();
+    if (error) { console.error('insert doc:', error); return null; }
+    return data;
+  } else {
+    const { data, error } = await db.from('documents').update(payload).eq('id', doc.id).select().single();
+    if (error) { console.error('update doc:', error); return null; }
+    return data;
+  }
+}
+
+async function dbDeleteDocument(docId) {
+  const { error } = await db.from('documents').delete().eq('id', docId);
+  return !error;
+}
+
+async function dbAddNote(docId, clientId, author, text) {
+  const { data, error } = await db.from('notes').insert({ document_id:docId, client_id:clientId, author, text }).select().single();
+  if (error) { console.error('add note:', error); return null; }
+  return data;
+}
+
+async function dbGetActivityLog(clientId) {
+  const { data, error } = await db.from('activity_log').select('*').eq('client_id', clientId).order('created_at', { ascending:false }).limit(100);
+  if (error) return [];
+  return (data||[]).map(e => ({
+    ...e,
+    timestamp: new Date(e.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+  }));
+}
+
+async function dbGetAllActivity() {
+  const { data, error } = await db.from('activity_log').select('*').order('created_at', { ascending:false }).limit(200);
+  if (error) return [];
+  return (data||[]).map(e => ({
+    ...e,
+    timestamp: new Date(e.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+  }));
+}
+
+async function dbLogActivity(clientId, clientName, action, by, detail) {
+  await db.from('activity_log').insert({ client_id:clientId, client_name:clientName, action, by, detail:detail||'' });
+}
+
+async function dbGetRemarks(clientId) {
+  const { data, error } = await db.from('internal_remarks').select('*').eq('client_id', clientId).order('created_at', { ascending:false });
+  if (error) return [];
+  return (data||[]).map(r => ({
+    ...r,
+    time: new Date(r.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+  }));
+}
+
+async function dbAddRemark(clientId, text, isEdit) {
+  await db.from('internal_remarks').insert({ client_id:clientId, text, is_edit:isEdit||false });
+}
+
+async function uploadFile(file, clientId, docId) {
+  const ext = file.name.split('.').pop();
+  const path = `${clientId}/${docId}_${Date.now()}.${ext}`;
+  const { error } = await db.storage.from('documents').upload(path, file, { upsert:true });
+  if (error) { console.error('upload:', error); return null; }
+  const { data: urlData } = db.storage.from('documents').getPublicUrl(path);
+  return { url: urlData.publicUrl, name: file.name };
+}
+
 async function seedDemoIfEmpty() {
-  const existing = loadClients();
+  const existing = await dbGetClients();
   if (existing.length) return existing;
   const pwHash = await hashPassword('Qtech2025');
-  const c = {
-    id: 1001, name: 'Qtech SPC', email: 'finance@qtechspc.om',
-    period: 'Q1 2025', docType: 'Bank statement',
-    deadline: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-    slug: 'qtech-spc', passwordHash: pwHash, passwordPlain: 'Qtech2025',
-    items: [
-      { ...mkItem(2001, 'Bank statement – January 2025', 'Scanned PDF', 'fintler'), status: 'received', notes: [{ author: 'Client', text: 'Uploaded via portal', time: '12 Jun, 09:14' }] },
-      { ...mkItem(2002, 'Bank statement – February 2025', 'Scanned PDF', 'fintler'), status: 'review' },
-      mkItem(2003, 'Bank statement – March 2025', 'Scanned PDF', 'fintler'),
-    ],
-    internalRemarks: [{ text: 'Client confirmed March statement arriving by end of week.', time: '10 Jun, 14:30' }],
-    analysis: null, createdAt: new Date().toISOString(),
-  };
-  const clients = [c];
-  saveClients(clients);
-  return clients;
+  const { data: client, error } = await db.from('clients').insert({
+    name:'Qtech SPC', email:'finance@qtechspc.om', period:'Q1 2025',
+    doc_type:'Bank statement', deadline: new Date(Date.now()+7*86400000).toISOString().slice(0,10),
+    slug:'qtech-spc', password_hash:pwHash, password_plain:'Qtech2025',
+  }).select().single();
+  if (error || !client) return [];
+  const docs = [
+    {name:'Bank statement – January 2025',format:'Scanned PDF',status:'received',added_by:'fintler'},
+    {name:'Bank statement – February 2025',format:'Scanned PDF',status:'review',added_by:'fintler'},
+    {name:'Bank statement – March 2025',format:'Scanned PDF',status:'pending',added_by:'fintler'},
+  ];
+  for (const d of docs) {
+    await db.from('documents').insert({...d, client_id:client.id});
+  }
+  await dbLogActivity(client.id, client.name, 'Demo engagement created', 'Admin', 'Qtech SPC');
+  return await dbGetClients();
 }
