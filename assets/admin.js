@@ -2,7 +2,7 @@
 // FINTLER PORTAL — ADMIN v4 (Supabase connected)
 // ═══════════════════════════════════════════════════════
 
-const ADMIN_PASSWORDS = ['FintlerAdmin2025', 'AliAdmin2025'];
+const ADMIN_PASSWORDS = ['FintlerAdmin2025'];
 let clients = [];
 let activeId = null;
 let activeClientData = null;
