@@ -208,3 +208,112 @@ async function seedDemoIfEmpty() {
   await dbLogActivity(client.id, client.name, 'Demo engagement created', 'Admin', 'Qtech SPC');
   return await dbGetClients();
 }
+
+// ═══════════════════════════════════════════════════════
+// NOTIFICATION BELL SYSTEM
+// ═══════════════════════════════════════════════════════
+
+async function dbGetNotifications(role) {
+  const { data, error } = await db
+    .from('notifications')
+    .select('*')
+    .or(`target_role.eq.${role},target_role.eq.all`)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) { console.error('getNotifications:', error); return []; }
+  return data || [];
+}
+
+async function dbMarkNotificationsRead(role) {
+  await db
+    .from('notifications')
+    .update({ read_by: role })
+    .or(`target_role.eq.${role},target_role.eq.all`)
+    .is('read_by', null);
+}
+
+async function dbPushNotification(type, title, detail, clientName, targetRole) {
+  await db.from('notifications').insert({
+    type,
+    title,
+    detail: detail || '',
+    client_name: clientName || '',
+    target_role: targetRole || 'all',
+    read_by: null,
+  });
+}
+
+let _notifRole = 'team';
+let _notifOpen = false;
+
+function initNotificationBell(role) {
+  _notifRole = role;
+  refreshNotifBadge();
+  setInterval(refreshNotifBadge, 30000);
+}
+
+async function refreshNotifBadge() {
+  const all = await dbGetNotifications(_notifRole);
+  const unread = all.filter(n => n.read_by === null).length;
+  const badge = document.getElementById('notif-badge');
+  if (badge) {
+    badge.textContent = unread > 9 ? '9+' : unread;
+    badge.style.display = unread > 0 ? 'flex' : 'none';
+  }
+}
+
+async function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  _notifOpen = !_notifOpen;
+  if (_notifOpen) {
+    panel.classList.remove('notif-hidden');
+    await renderNotifPanel();
+    await dbMarkNotificationsRead(_notifRole);
+    const badge = document.getElementById('notif-badge');
+    if (badge) badge.style.display = 'none';
+  } else {
+    panel.classList.add('notif-hidden');
+  }
+}
+
+async function renderNotifPanel() {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  list.innerHTML = '<div class="notif-loading">Loading...</div>';
+  const items = await dbGetNotifications(_notifRole);
+  if (!items.length) {
+    list.innerHTML = '<div class="notif-empty">You\'re all caught up ✓</div>';
+    return;
+  }
+  list.innerHTML = items.map(n => {
+    const icon = { file_upload:'📎', status_change:'🔄', new_client:'🆕', remark:'💬' }[n.type] || '🔔';
+    const ago = timeAgo(new Date(n.created_at));
+    const unread = n.read_by === null;
+    return `<div class="notif-item${unread ? ' notif-unread' : ''}">
+      <div class="notif-icon">${icon}</div>
+      <div class="notif-body">
+        <div class="notif-title">${n.title}</div>
+        ${n.detail ? `<div class="notif-detail">${n.detail}</div>` : ''}
+        ${n.client_name ? `<div class="notif-client">${n.client_name}</div>` : ''}
+        <div class="notif-time">${ago}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function timeAgo(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+document.addEventListener('click', function(e) {
+  if (_notifOpen && !e.target.closest('#notif-bell-btn') && !e.target.closest('#notif-panel')) {
+    const panel = document.getElementById('notif-panel');
+    if (panel) panel.classList.add('notif-hidden');
+    _notifOpen = false;
+  }
+});
