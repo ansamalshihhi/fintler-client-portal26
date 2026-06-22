@@ -242,3 +242,53 @@ async function addNote(iid) {
   await dbLogActivity(activeId,activeClientData?.name||'',`Note added on "${item.name}"`,'Team',inp.value.trim().substring(0,60));
   inp.value='';activeDocs=await dbGetDocuments(activeId);renderDetail();renderFeed(activeId);
 }
+function renderDocTab(docs) {
+  const pending=docs.filter(i=>i.status!=='received');
+  const received=docs.filter(i=>i.status==='received');
+  return `
+    <div class="section-head">
+      <div class="section-lbl" style="margin-bottom:0">Checklist</div>
+      <button class="btn btn-ghost btn-sm" onclick="openItemModal()">+ Add item</button>
+    </div>
+    ${!docs.length?'<div class="empty">No items yet.</div>':''}
+    ${pending.length?`<div style="font-size:11px;font-weight:600;color:var(--amber-600);margin-bottom:8px">PENDING (${pending.length})</div>`:''}
+    ${pending.map(item=>docItemHTML(item)).join('')}
+    ${received.length?`<div style="font-size:11px;font-weight:600;color:var(--green-600);margin:14px 0 8px">RECEIVED (${received.length})</div>`:''}
+    ${received.map(item=>docItemHTML(item)).join('')}
+  `;
+}
+
+function docItemHTML(item) {
+  return `<div class="doc-item" id="di-${item.id}">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div class="doc-check${item.status==='received'?' received':''}" onclick="toggleStatus(${item.id})"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;text-decoration:${item.status==='received'?'line-through':'none'};color:${item.status==='received'?'var(--gray-400)':'var(--gray-800)'}">
+          ${item.name}
+        </div>
+        <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">
+          ${item.format?`<span class="tag">${item.format}</span>`:''}
+          <span class="badge ${item.status==='received'?'b-received':item.status==='review'?'b-review':'b-pending'}">${item.status}</span>
+          ${item.addedBy==='client'?'<span class="badge b-client">Client added</span>':''}
+        </div>
+        ${item.fileUrl?`<a href="${item.fileUrl}" target="_blank" class="file-attached">📎 ${item.fileName||'View file'}</a>`:''}
+      </div>
+      <select onchange="changeStatus(${item.id},this.value)" style="width:120px;font-size:11px;padding:5px 7px;flex-shrink:0">
+        ${['pending','received','review','rejected'].map(s=>`<option value="${s}"${item.status===s?' selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+      </select>
+    </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-100)">
+      ${(item.notes||[]).map(n=>`<div class="note-entry"><div class="note-author">${n.author}</div><div class="note-text">${n.text}</div><div class="note-time">${n.time}</div></div>`).join('')}
+      <div class="add-row">
+        <input type="text" id="note-${item.id}" placeholder="Add note..." style="flex:1;font-size:12px" onkeydown="if(event.key==='Enter')addNote(${item.id})"/>
+        <button class="btn btn-ghost btn-sm" onclick="addNote(${item.id})">Note</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openItemModal(){
+  openModal('item-modal');
+  document.getElementById('im-name').value='';
+  document.getElementById('im-note').value='';
+}
