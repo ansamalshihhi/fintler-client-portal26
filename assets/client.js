@@ -51,6 +51,26 @@ function showError(msg) {
   document.getElementById('pw-input').focus();
 }
 
+function getFileIcon(fileName) {
+  if (!fileName) return '📎';
+  const ext = fileName.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '📄';
+  if (['xlsx','xls','csv'].includes(ext)) return '📊';
+  if (['doc','docx'].includes(ext)) return '📝';
+  if (['jpg','jpeg','png'].includes(ext)) return '🖼️';
+  return '📎';
+}
+
+function fileAttachmentHTML(fileUrl, fileName) {
+  if (!fileUrl) return '';
+  const icon = getFileIcon(fileName);
+  const displayName = fileName || 'View uploaded file';
+  return `<a href="${fileUrl}" target="_blank" download="${displayName}" class="file-attached" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#EAF5EA;border:1px solid #B8E0B8;border-radius:6px;font-size:12px;color:#237A23;text-decoration:none;margin-top:8px;cursor:pointer">
+    ${icon} ${displayName}
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:2px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </a>`;
+}
+
 function renderClientPortal() {
   const c = activeClient;
   const docs = activeDocs;
@@ -99,7 +119,7 @@ function clientDocHTML(item) {
         ${item.format?`<div style="font-size:12px;color:var(--gray-400);margin-top:4px">Format: <span class="tag">${item.format}</span></div>`:''}
         ${item.status==='review'?'<div style="font-size:12px;color:#1B38DB;margin-top:5px;font-weight:500">Under review by Fintler</div>':''}
         ${item.status==='rejected'?'<div style="font-size:12px;color:var(--red-600);margin-top:5px;font-weight:500">Please re-submit — Fintler has a question about this item</div>':''}
-        ${item.fileUrl?`<a href="${item.fileUrl}" target="_blank" class="file-attached">📎 ${item.fileName||'View uploaded file'}</a>`:''}
+        ${fileAttachmentHTML(item.fileUrl, item.fileName)}
       </div>
       <span class="badge ${item.status==='received'?'b-received':item.status==='review'?'b-review':item.status==='rejected'?'b-overdue':'b-pending'}">
         ${item.status==='received'?'Submitted':item.status==='review'?'Under review':item.status==='rejected'?'Re-submit':'Pending'}
@@ -200,6 +220,7 @@ async function clientAddItem() {
   toast('Document added');
   renderClientFeed();
 }
+
 async function renderClientFeed() {
   const el = document.getElementById('feed-scroll'); if (!el || !activeClient) return;
   const entries = await dbGetActivityLog(activeClient.id);
