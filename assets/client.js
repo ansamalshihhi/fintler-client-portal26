@@ -52,7 +52,7 @@ function showError(msg) {
 }
 
 function getFileIcon(fileName) {
-  if (!fileName) return '📎';
+  if (!fileName) return '';
   const ext = fileName.split('.').pop().toLowerCase();
   if (ext === 'pdf') return '📄';
   if (['xlsx','xls','csv'].includes(ext)) return '📊';
@@ -63,10 +63,9 @@ function getFileIcon(fileName) {
 
 function fileAttachmentHTML(fileUrl, fileName) {
   if (!fileUrl) return '';
-  const icon = getFileIcon(fileName);
   const displayName = fileName || 'View uploaded file';
-  return `<a href="${fileUrl}" target="_blank" download="${displayName}" class="file-attached" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#EAF5EA;border:1px solid #B8E0B8;border-radius:6px;font-size:12px;color:#237A23;text-decoration:none;margin-top:8px;cursor:pointer">
-    ${icon} ${displayName}
+  return `<a href="${fileUrl}" target="_blank" download="${displayName}" class="file-attached" style="margin-top:8px">
+    ${displayName}
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:2px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
   </a>`;
 }
@@ -110,10 +109,17 @@ function renderClientPortal() {
 }
 
 function clientDocHTML(item) {
+  const visibleNotes = (item.notes||[]).filter(n =>
+    !n.text.includes('File uploaded by team') &&
+    !n.text.includes('✏️') &&
+    !n.text.includes('📧') &&
+    !n.text.includes('⏰')
+  );
+
   return `<div class="client-doc${item.status==='received'?' done':''}">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:500;text-decoration:${item.status==='received'?'line-through':'none'};color:${item.status==='received'?'var(--gray-400)':'var(--gray-800)'}">
+        <div style="font-size:14px;font-weight:600;text-decoration:${item.status==='received'?'line-through':'none'};color:${item.status==='received'?'var(--gray-400)':'var(--gray-800)'}">
           ${item.name}
         </div>
         ${item.format?`<div style="font-size:12px;color:var(--gray-400);margin-top:4px">Format: <span class="tag">${item.format}</span></div>`:''}
@@ -144,15 +150,35 @@ function clientDocHTML(item) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         Received — Fintler is reviewing
       </div>
-      <button onclick="clientUnsubmit(${item.id})" style="margin-top:6px;font-size:11px;color:var(--gray-400);background:none;border:1px solid var(--gray-200);border-radius:4px;padding:3px 10px;cursor:pointer">
+      <button onclick="clientUnsubmit(${item.id})" style="margin-top:6px;font-size:11px;color:var(--gray-400);background:none;border:1px solid var(--gray-200);border-radius:6px;padding:3px 10px;cursor:pointer">
         ↩ Undo submission
       </button>`:''}
 
-    ${(item.notes||[]).filter(n=>n.author!=='Fintler team'&&!n.text.includes('✏️')).map(n=>`
-      <div style="margin-top:8px;padding:8px 10px;background:var(--gray-50);border-radius:6px;font-size:12px;color:var(--gray-600)">
-        <b>${n.author}:</b> ${n.text} <span style="color:var(--gray-400);font-size:10px">· ${n.time}</span>
-      </div>`).join('')}
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
+      ${visibleNotes.map(n=>`
+        <div class="note-entry" style="margin-bottom:6px">
+          <div class="note-author">${n.author}</div>
+          <div class="note-text">${n.text}</div>
+          <div class="note-time">${n.time}</div>
+        </div>`).join('')}
+      <div class="add-row">
+        <input type="text" id="client-note-${item.id}" placeholder="Add a note..." style="flex:1;font-size:12px" onkeydown="if(event.key==='Enter')clientAddNote(${item.id})"/>
+        <button class="btn btn-ghost btn-sm" onclick="clientAddNote(${item.id})">Note</button>
+      </div>
+    </div>
   </div>`;
+}
+
+async function clientAddNote(docId) {
+  const inp = document.getElementById('client-note-'+docId);
+  if (!inp||!inp.value.trim()) return;
+  const item = activeDocs.find(i=>i.id===docId); if(!item) return;
+  await dbAddNote(docId, activeClient.id, 'Client', inp.value.trim());
+  await dbLogActivity(activeClient.id, activeClient.name, `Note added on "${item.name}"`, 'Client', inp.value.trim().substring(0,60));
+  inp.value='';
+  activeDocs = await dbGetDocuments(activeClient.id);
+  renderClientPortal();
+  toast('Note added');
 }
 
 async function handleFileUpload(docId, input) {
